@@ -612,7 +612,17 @@ require('lazy').setup({
         -- But for many setups, the LSP (`ts_ls`) will work just fine
         -- ts_ls = {},
 
-        kotlin_language_server = {},
+        kotlin_language_server = {
+          -- JetBrains Kotlin LSP (https://github.com/Kotlin/kotlin-lsp)
+          -- Bundles its own JBR 25, supports Kotlin 2.3+, handles Gradle imports.
+          -- Installed manually to ~/.local/share/kotlin-lsp/kotlin-server-<version>/
+          cmd = {
+            vim.env.HOME .. '/.local/share/kotlin-lsp/kotlin-server-262.4739.0/bin/intellij-server',
+            '--stdio',
+          },
+          filetypes = { 'kotlin' },
+          root_markers = { 'settings.gradle', 'settings.gradle.kts', 'build.gradle', 'build.gradle.kts', 'pom.xml', '.git' },
+        },
         ts_ls = {},
         angularls = {},
         stylua = {}, -- Used to format Lua code
@@ -654,7 +664,9 @@ require('lazy').setup({
       --    :Mason
       --
       -- You can press `g?` for help in this menu.
-      local ensure_installed = vim.tbl_keys(servers or {})
+      -- Servers managed manually (not via Mason) — exclude from auto-install.
+      local manually_installed = { kotlin_language_server = true }
+      local ensure_installed = vim.tbl_filter(function(name) return not manually_installed[name] end, vim.tbl_keys(servers or {}))
       vim.list_extend(ensure_installed, {
         -- You can add other tools here that you want Mason to install
       })
@@ -926,7 +938,9 @@ require('lazy').setup({
     cmd = { 'DiffviewOpen', 'DiffviewFileHistory', 'DiffviewClose' },
     keys = {
       { '<leader>gd', '<cmd>DiffviewOpen<CR>', desc = '[G]it [D]iffview open' },
-      { '<leader>gh', '<cmd>DiffviewFileHistory %<CR>', desc = '[G]it file [H]istory' },
+      { '<leader>gh', '<cmd>DiffviewFileHistory %<CR>', desc = '[G]it file [H]istory (current file)' },
+      { '<leader>gH', '<cmd>DiffviewFileHistory<CR>', desc = '[G]it repo [H]istory' },
+      { '<leader>gm', '<cmd>DiffviewOpen origin/main...HEAD<CR>', desc = '[G]it diff vs origin/[m]ain' },
       { '<leader>gq', '<cmd>DiffviewClose<CR>', desc = '[G]it diffview [Q]uit' },
     },
     opts = {},
