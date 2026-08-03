@@ -3,6 +3,10 @@ test.sh
 .luarc.json
 nvim
 
+# Per-machine overrides, sourced at the end of init.lua. Never committed, so the
+# same config can be shared across hosts.
+lua/local.lua
+
 spell/
 
 # In your personal fork, you likely want to comment this, since it's recommended to track

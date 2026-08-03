@@ -613,20 +613,19 @@ require('lazy').setup({
         -- But for many setups, the LSP (`ts_ls`) will work just fine
         -- ts_ls = {},
 
-        kotlin_language_server = {
-          -- JetBrains Kotlin LSP (https://github.com/Kotlin/kotlin-lsp)
-          -- Bundles its own JBR 25, supports Kotlin 2.3+, handles Gradle imports.
-          -- Installed manually to ~/.local/share/kotlin-lsp/kotlin-server-<version>/
-          cmd = {
-            vim.env.HOME .. '/.local/share/kotlin-lsp/kotlin-server-262.4739.0/bin/intellij-server',
-            '--stdio',
-          },
-          filetypes = { 'kotlin' },
-          root_markers = { 'settings.gradle', 'settings.gradle.kts', 'build.gradle', 'build.gradle.kts', 'pom.xml', '.git' },
-        },
         ts_ls = {},
         angularls = {},
         stylua = {}, -- Used to format Lua code
+        texlab = {
+          -- LaTeX LSP: label/citation completion, cross-file `\label` rename, log diagnostics.
+          -- Building and PDF viewing are handled by VimTeX, so texlab's own build is disabled.
+          settings = {
+            texlab = {
+              build = { onSave = false },
+              chktex = { onOpenAndSave = true, onEdit = false },
+            },
+          },
+        },
 
         -- Special Lua Config, as recommended by neovim help docs
         lua_ls = {
@@ -658,6 +657,19 @@ require('lazy').setup({
         },
       }
 
+      -- JetBrains Kotlin LSP (https://github.com/Kotlin/kotlin-lsp)
+      -- Bundles its own JBR 25, supports Kotlin 2.3+, handles Gradle imports.
+      -- Installed manually to ~/.local/share/kotlin-lsp/kotlin-server-<version>/, so it is
+      -- only registered where that binary actually exists — this config is shared across machines.
+      local kotlin_bin = vim.env.HOME .. '/.local/share/kotlin-lsp/kotlin-server-262.4739.0/bin/intellij-server'
+      if vim.uv.fs_stat(kotlin_bin) then
+        servers.kotlin_language_server = {
+          cmd = { kotlin_bin, '--stdio' },
+          filetypes = { 'kotlin' },
+          root_markers = { 'settings.gradle', 'settings.gradle.kts', 'build.gradle', 'build.gradle.kts', 'pom.xml', '.git' },
+        }
+      end
+
       -- Ensure the servers and tools above are installed
       --
       -- To check the current status of installed tools and/or manually install
@@ -670,6 +682,7 @@ require('lazy').setup({
       local ensure_installed = vim.tbl_filter(function(name) return not manually_installed[name] end, vim.tbl_keys(servers or {}))
       vim.list_extend(ensure_installed, {
         -- You can add other tools here that you want Mason to install
+        'latexindent', -- LaTeX formatter (needs perl + YAML::Tiny, Log::Log4perl, File::HomeDir)
       })
 
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
@@ -701,7 +714,9 @@ require('lazy').setup({
         -- Disable "format_on_save lsp_fallback" for languages that don't
         -- have a well standardized coding style. You can add additional
         -- languages here or re-enable it for the disabled ones.
-        local disable_filetypes = { c = true, cpp = true }
+        -- `tex` is excluded because latexindent is slow and opinionated about line
+        -- wrapping — format LaTeX deliberately with <leader>f instead.
+        local disable_filetypes = { c = true, cpp = true, tex = true, plaintex = true }
         if disable_filetypes[vim.bo[bufnr].filetype] then
           return nil
         else
@@ -713,6 +728,7 @@ require('lazy').setup({
       end,
       formatters_by_ft = {
         lua = { 'stylua' },
+        tex = { 'latexindent' },
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
         --
@@ -951,7 +967,7 @@ require('lazy').setup({
   --    This is the easiest way to modularize your config.
   --
   --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
-  -- { import = 'custom.plugins' },
+  { import = 'custom.plugins' },
   --
   -- For additional information with loading, sourcing and examples see `:help lazy.nvim-🔌-plugin-spec`
   -- Or use telescope!
@@ -978,6 +994,12 @@ require('lazy').setup({
     },
   },
 })
+
+-- Per-machine escape hatch: `lua/local.lua` is gitignored, so this config can be shared
+-- across machines while still allowing host-specific overrides (paths, engines, viewers).
+-- It runs last, so it can override anything set above.
+local ok, err = pcall(dofile, vim.fn.stdpath 'config' .. '/lua/local.lua')
+if not ok and not tostring(err):match 'No such file or directory' then vim.notify('lua/local.lua: ' .. tostring(err), vim.log.levels.WARN) end
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et

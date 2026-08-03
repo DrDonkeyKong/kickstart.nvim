@@ -12,7 +12,10 @@ local check_version = function()
     return
   end
 
-  if vim.version.ge(vim.version(), '0.11') then
+  -- 0.12.4 is the floor because VimTeX master requires it (see lua/custom/plugins/latex.lua).
+  -- Both machines run the upstream neovim tarball, not a distro package, so this is the
+  -- fastest way to spot a host that was never migrated.
+  if vim.version.ge(vim.version(), '0.12.4') then
     vim.health.ok(string.format("Neovim version is: '%s'", verstr))
   else
     vim.health.error(string.format("Neovim out of date: '%s'. Upgrade to latest stable or nightly", verstr))
