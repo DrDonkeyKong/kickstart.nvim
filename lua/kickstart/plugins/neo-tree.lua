@@ -20,6 +20,9 @@ return {
   opts = {
     filesystem = {
       group_empty_dirs = true,
+      filtered_items = {
+        hide_dotfiles = false,
+      },
       window = {
         mappings = {
           ['\\'] = 'close_window',
