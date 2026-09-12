@@ -10,6 +10,86 @@ A starting point for Neovim that is:
 
 **NOT** a Neovim distribution, but instead a starting point for your configuration.
 
+---
+
+## This fork: personal setup notes
+
+This fork of kickstart is shared between two machines:
+
+- **Ubuntu 24.04 laptop** (native Linux) — this is the **leading** setup. All
+  decisions are made for it first.
+- **Windows laptop with WSL2** (Ubuntu inside WSL) — expected to follow the
+  Ubuntu setup. The config lives inside the WSL filesystem, not on the Windows
+  side. Neovim runs inside WSL; GUI apps like `zathura` are shown via WSLg.
+  If a change might need extra attention on the WSL machine, the user should
+  be notified so that machine can be adjusted — but the Ubuntu setup is not
+  constrained to make WSL easier.
+
+The config itself is intentionally identical on both hosts. Host-specific
+overrides belong in `lua/local.lua` (gitignored, sourced at the end of
+`init.lua`), never in the tracked files.
+
+### Neovim installation (both machines, as of 2026)
+
+Both machines run Neovim from the **upstream release tarball**, extracted under
+`~/.local/share/nvim-linux-x86_64/` and symlinked into `~/.local/bin/nvim`
+(which must precede `/usr/bin` on `PATH`). This is currently the only sane
+option on Ubuntu 24.04, because:
+
+- The Ubuntu archive ships Neovim 0.9.5, too old for VimTeX master (needs
+  >= 0.11, and this config targets 0.12.4).
+- `ppa:neovim-ppa/unstable` is abandoned — last publish 2026-01-11, still on a
+  pre-0.12.0 dev snapshot.
+- `ppa:neovim-ppa/stable` is also abandoned — no activity for well over a year,
+  and it does not ship a `neovim` package for Noble (24.04) at all; the newest
+  `neovim` source in it is `0.7.2` for Jammy from 2022-07.
+- Snap/Flatpak Neovim have sandbox friction with Mason-installed LSPs and
+  clipboard, so they are avoided.
+
+Concrete steps and the LaTeX toolchain install are documented in
+`~/Downloads/nvim-latex-laptop-setup.md` on the laptop (and the equivalent
+setup was performed on the WSL machine).
+
+### Updating Neovim
+
+There is no auto-update. To move to a newer release:
+
+```bash
+cd /tmp
+curl -fLO https://github.com/neovim/neovim/releases/download/vX.Y.Z/nvim-linux-x86_64.tar.gz
+tar -xzf nvim-linux-x86_64.tar.gz -C ~/.local/share
+# symlink already points into the extracted tree; usually no re-link needed
+nvim --version | head -1
+```
+
+The tarball extracts over the existing directory in place. Plugin state under
+`~/.local/share/nvim/` (different directory) is untouched.
+
+### Note to any future agent working on this setup
+
+> **Do not treat the current install method as fixed.** The tarball approach was
+> chosen because, at the time this README was written, every apt-based path on
+> Ubuntu 24.04 was either too old or unmaintained, and version managers were
+> considered overkill for two machines. If you are reading this later:
+>
+> - Re-check the state of `ppa:neovim-ppa/{stable,unstable}` and any successor
+>   PPA. If a maintained apt source has appeared that ships a current Neovim
+>   for the host's Ubuntu release, it is likely the better default.
+> - Re-check whether the Ubuntu archive itself has caught up (a newer LTS or an
+>   HWE-style backport may have landed a modern Neovim).
+> - `bob` (Rust-based Neovim version manager) is a reasonable managed
+>   alternative if manual updates ever become annoying; the tradeoff is that it
+>   should be adopted on **both** machines at once to keep the setup uniform.
+> - **The Ubuntu laptop is the leading setup.** All decisions are made for
+>   Ubuntu first; the WSL2 machine is expected to follow. Do **not** constrain
+>   the Ubuntu setup to accommodate WSL quirks. If a change is likely to need
+>   extra care on the WSL side (e.g. WSLg / zathura / clipboard / SyncTeX
+>   behaviour, path translation, systemd-in-WSL assumptions), **flag it to the
+>   user** so the WSL machine can be adjusted separately — do not water down
+>   the Ubuntu setup to avoid the flag.
+
+---
+
 ## Installation
 
 ### Install Neovim
